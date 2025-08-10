@@ -502,7 +502,7 @@ void setup() {
   oled.setCursor(0, 4);
   oled.print("ESP32 + cg_charger_ip");
   oled.setCursor(0, 6);
-  oled.print("Alexander Molodkin");
+  oled.print("For AtomSwift");
   delay(5000);
   oled.clear();
 
