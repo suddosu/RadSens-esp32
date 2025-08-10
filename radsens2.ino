@@ -1,16 +1,16 @@
 // Объединённый скетч: RadSens + IP5306 -> BLE (совместимо с Android-приложением "Fast/AtomFast")
-// ESP32 core 2.0.17
+// ESP32 core 2.0.17!!! На 3.3.0 не взлетит
 
 #include <Arduino.h>
 #include "CG_RadSens.h"
 #include <Wire.h>
-#include <GyverOLED.h>   // OLED из старого скетча
+#include <GyverOLED.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-// ====================== UUID'ы (как в новом скетче) ======================
+// ====================== UUID'ы BLE ======================
 #define SERVICE_UUID "63462a4a-c28c-4ffd-87a4-2d23a1c72581"
 BLECharacteristic DoseCharacteristics("70bc767e-7a1a-4304-81ed-14b9af54f7bd", BLECharacteristic::PROPERTY_NOTIFY);
 BLECharacteristic ThresholdCharacteristics_1("3f71e820-1d98-46d4-8ed6-324c8428868c", BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE );
@@ -75,7 +75,7 @@ uint8_t ip5306_get_bits(uint8_t reg, uint8_t index, uint8_t bits){
 // ====================== RadSens ======================
 CG_RadSens radSens(RS_DEFAULT_I2C_ADDRESS);
 
-// ====================== OLED (взято из старого скетча) ======================
+// ====================== OLED ======================
 GyverOLED<SSD1306_128x64, OLED_NO_BUFFER> oled;
 char *connstat;
 
@@ -91,7 +91,7 @@ uint16_t sensitivity = 0;
 uint32_t timer_cnt = 0; // опрос RadSens раз в 1с
 uint32_t timer_oled = 0; // обновление OLED
 
-// ====================== Переменные порогов (из нового скетча) ======================
+// ====================== Переменные порогов ======================
 bool GetDataThreshold_1;
 float DoseThreshold_1 = 10000;
 float DoseRateThreshold_1 = 30;
@@ -128,7 +128,7 @@ float getFloat(uint8_t* pData, uint8_t startIdx) {
   return float_bytes_u.val;
 }
 
-// ====================== BLE колбэки (заменены на старые, чтобы поддерживать connstat и поведение экрана) ======================
+// ====================== BLE колбэки ======================
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
     deviceConnected = true;
@@ -143,7 +143,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
   };
 };
 
-// Threshold callbacks (взяты из нового скетча)
+// Threshold callbacks
 class ThresholdCallbacks_1: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *ThresholdCharacteristics_1) {
       std::string rxValue = ThresholdCharacteristics_1->getValue();
@@ -373,7 +373,7 @@ class SettingsCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
-// ====================== Функция отправки пакета дозы (как в оригинале) ======================
+// ====================== Функция отправки пакета дозы ======================
 void BleSentDoseData (float RAD, float DOSERAD, float PULSE2, uint8_t battery, int8_t temperature) {
   uint8_t date[13];
   if (battery > 100) {                      // индикатор зарядки акб
@@ -413,7 +413,7 @@ void SentDataThreshold_1() {
 void SentDataThreshold_2() {
   uint8_t date[10];
   *(float*)(&date[0]) = DoseThreshold_2 / 100000;   //  доза в мкр
-  *(float*)(&date[4]) = DoseRateThreshold_2 / 100;  // мощность дози в мкр/ч
+  *(float*)(&date[4]) = DoseRateThreshold_2 / 100;  // мощность дозы в мкр/ч
   if (DoseRateSoudTh_2 == 0 && DoseRateVibroTh_2 == 0 && DoseSoudTh_2 == 0 && DoseVibroTh_2 == 0) { date[9] = 0; }
   if (DoseRateSoudTh_2 == 1 && DoseRateVibroTh_2 == 1 && DoseSoudTh_2 == 1 && DoseVibroTh_2 == 1) { date[9] = 34; }
   if (DoseRateSoudTh_2 == 1 && DoseRateVibroTh_2 == 0 && DoseSoudTh_2 == 0 && DoseVibroTh_2 == 0) { date[9] = 16; }
@@ -430,7 +430,7 @@ void SentDataThreshold_2() {
 void SentDataThreshold_3() {
   uint8_t date[10];
   *(float*)(&date[0]) = DoseThreshold_3 / 100000;   //  доза в мкр
-  *(float*)(&date[4]) = DoseRateThreshold_3 / 100;  // мощность дози в мкр/ч
+  *(float*)(&date[4]) = DoseRateThreshold_3 / 100;  // мощность дозы в мкр/ч
   if (DoseRateSoudTh_3 == 0 && DoseRateVibroTh_3 == 0 && DoseSoudTh_3 == 0 && DoseVibroTh_3 == 0) { date[9] = 0; }
   if (DoseRateSoudTh_3 == 1 && DoseRateVibroTh_3 == 1 && DoseSoudTh_3 == 1 && DoseVibroTh_3 == 1) { date[9] = 34; }
   if (DoseRateSoudTh_3 == 1 && DoseRateVibroTh_3 == 0 && DoseSoudTh_3 == 0 && DoseVibroTh_3 == 0) { date[9] = 16; }
@@ -445,15 +445,14 @@ void SentDataThreshold_3() {
   ThresholdCharacteristics_3.notify();
 }
 
-// ====================== setup ======================
 void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-  // RadSens init (сохраним как в новом скетче)
+  // RadSens init
   radSens.init();
   pulsesPrev = radSens.getNumberOfPulses();
-  radSens.setSensitivity(378); // твоя настройка трубки
+  radSens.setSensitivity(378); // твоя настройка трубки, подбирается по параметрам
 
   // BLE init
   BLEDevice::init("AtomFast");
@@ -487,10 +486,10 @@ void setup() {
   Serial.println("BLE started, waiting for connection...");
   connstat = "Waiting to connect...";
 
-  // PWM setup (как в старом)
+  // PWM setup
   ledcSetup(1, 500, 8);
 
-  // OLED init & splash (взято из старого скетча)
+  // OLED init & splash
   oled.init();
   oled.flipV(1);
   oled.flipH(1);
@@ -512,7 +511,6 @@ void setup() {
   // pulsesPrev = radSens.getNumberOfPulses();
 }
 
-// ====================== loop ======================
 void loop () {
   // опрос RadSens каждую секунду
   if (millis() - timer_cnt > 1000) {
@@ -522,7 +520,7 @@ void loop () {
     impval = radSens.getNumberOfPulses();
     verval = radSens.getFirmwareVersion();
     sensitivity = radSens.getSensitivity();
-    radSens.setSensitivity(378); // как в старом скетче
+    radSens.setSensitivity(378); // чувствительность
   }
 
   if (deviceConnected) {
@@ -541,7 +539,7 @@ void loop () {
     uint8_t leds = IP5306_GetLevelLeds();
     uint8_t bat_percent = IP5306_LEDS2PCT(leds); // 0..100 (шаги 25%)
 
-    // температура у тебя не считывается - ставим 0
+    // датчика температуры нет - ставим 0
     int8_t temperature = 0;
 
     // Отправляем пакет на приложение
@@ -553,7 +551,7 @@ void loop () {
     SentDataThreshold_3();
   }
 
-  // Обновление OLED (как в старом скетче) каждую секунду
+  // Обновление OLED каждую секунду
   if (millis() - timer_oled > 1000) {
     timer_oled = millis();
 
@@ -589,7 +587,7 @@ void loop () {
     oled.print(connstat);
   }
 
-  // Обработка приходящих порогов и вывод в Serial (как в новом скетче)
+  // Обработка приходящих порогов и вывод в Serial
   if (GetDataThreshold_1 == 1) {
     GetDataThreshold_1 = 0;
     Serial.println();
