@@ -20,5 +20,5 @@ ProtonBridge arduino скетч для esp32, который позволяет 
 
 Ссылка на плату radsens https://climateguard.ru/radsens-board-mini/
 
-TG канал, на котороем можно скачать приложение для смартфона https://web.telegram.org/k/#@software_kbradar
+TG канал, на котором можно скачать приложение для смартфона https://web.telegram.org/k/#@software_kbradar
 ![atomswift](https://github.com/user-attachments/assets/e80ecd65-d5c1-4536-89ba-19a945a1121f)
